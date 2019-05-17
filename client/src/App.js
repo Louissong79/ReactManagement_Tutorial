@@ -10,6 +10,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableBody from '@material-ui/core/TableBody';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import { withStyles } from '@material-ui/core/styles';
 
 const CustomTableCell = withStyles(theme => ({
@@ -17,7 +18,7 @@ const CustomTableCell = withStyles(theme => ({
     backgroundColor: theme.palette.common.black,
     color: theme.palette.common.white,
   },
-  body: {
+  body: { 
     fontSize: 14,
   },
 }))(TableCell);
@@ -32,37 +33,53 @@ const styles = theme => ({
   },
   table: { 
     minWidth: 1080
+  },
+  progress: {
+    margin: theme.spacing.unit * 2
   }
 })
 
-const customers = [
-{
-  'id' : 1 ,
-  'image' : 'https://placeimg.com/64/64/1',
-  'name' : '송제길',
-  'birthday' : '791205',
-  'gender' : '남자',
-  'job' : '회사원'
-},
-{
-  'id' : 2 ,
-  'image' : 'https://placeimg.com/64/64/2',
-  'name' : '한효주',
-  'birthday' : '791205',
-  'gender' : '여자',
-  'job' : '연예인'
-},
-{
-  'id' : 3 ,
-  'image' : 'https://placeimg.com/64/64/3',
-  'name' : '홍길동',
-  'birthday' : '791205',
-  'gender' : '남자',
-  'job' : '백수'
-}
-]
+// 실행 순서
+/*
+ 1) constructor()
+
+ 2) componentWillMount()
+
+ 3) render()
+
+ 4) componentDidMount()
+
+ props or state => shouldComponentUpdate()
+
+*/
+
 class App extends Component {
-  render() {
+  state = {
+    customers: "",
+    completed: 0
+  }
+
+  componentDidMount() {
+
+    this.timer = setInterval(this.progress, 20);
+    
+    this.callApi()
+    .then(res => this.setState({customers: res}))
+    .catch(err => console.log(err));    
+  }
+
+  callApi = async () => {
+    const response = await fetch('/api/customers');
+    const body = await response.json();
+    return body;
+  }
+
+  progress = () => {
+    const { completed } = this.state;
+    this.setState({ completed: completed >= 100 ? 0 : completed + 1});
+  }
+
+  render() { 
   const { classes } = this.props;
   return (
       <Paper className={classes.root}> 
@@ -79,19 +96,14 @@ class App extends Component {
           </TableHead>
           <TableBody>
         {
-          customers.map(c => {
-            return (
-              <Customer  
-              key = {c.id}     
-              id = { c.id}
-              image = {c.image}
-              name = {c.name}
-              birthday={c.birthday}        
-              gender={c.gender}
-              job={c.job}
-            />
-            );
-          })
+          this.state.customers ? this.state.customers.map(c => {
+            return (  <Customer  key = {c.id}   id = { c.id} image = {c.image} name = {c.name} birthday={c.birthday}  gender={c.gender} job={c.job} /> );
+          }) : 
+          <TableRow>
+            <TableCell colSpan="6" align="center">
+              <CircularProgress className={classes.progress} variant="determinate" value={this.state.completed} />
+            </TableCell>
+          </TableRow>
         }
         </TableBody>
         </Table>
